@@ -39,3 +39,4 @@ if __name__ == "__main__":
     parser.add_argument("--role", default="manager")
     args = parser.parse_args()
     create_user(args.username, args.password, role=args.role)
+    

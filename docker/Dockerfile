@@ -20,7 +20,8 @@ COPY src ./src
 COPY dev-scripts ./dev-scripts
 COPY docker/entrypoint.sh /entrypoint.sh
 
-RUN chmod +x /entrypoint.sh \
+RUN sed -i 's/\r$//' /entrypoint.sh \
+    && chmod +x /entrypoint.sh \
     && adduser --disabled-password --gecos "" appuser \
     && mkdir -p /data \
     && chown -R appuser:appuser /app /data
