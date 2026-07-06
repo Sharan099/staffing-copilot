@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Staffing Copilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <h1>AI Staffing Copilot</h1>
+    <p>Internal staffing assistant for managers only.</p>
+    <label class="field-label">Username</label>
+    <input class="field-input" id="loginUser" type="text" placeholder="e.g. sharan" autocomplete="username">
+    <label class="field-label">Password</label>
+    <input class="field-input" id="loginPass" type="password" placeholder="Password" autocomplete="current-password">
+    <p id="loginError" style="color:var(--red);font-size:13px;min-height:18px;"></p>
+    <button class="btn btn-primary" id="loginBtn" style="width:100%;margin-top:8px;">Sign In</button>
+  </div>
+</div>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">AI</div>
+      <div>
+        <div class="brand-text">Staffing Copilot</div>
+        <div class="brand-sub">Enterprise</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-item" data-view="dashboard" type="button">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.75"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item active" data-view="request" type="button" id="newRequestBtn">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.75"><path d="M12 5v14M5 12h14"/></svg>
+        New Staffing Request
+      </button>
+      <button class="nav-item" data-view="history" type="button">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        Staffing History
+      </button>
+      <button class="nav-item" data-view="employees" type="button">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.75"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Employees
+      </button>
+      <button class="nav-item" data-view="monitor" type="button">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.75"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        AI Agent Monitor
+      </button>
+      <button class="nav-item" data-view="reports" type="button">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+        Reports
+      </button>
+      <button class="nav-item" data-view="settings" type="button">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.75"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <div class="profile-block">
+      <div class="profile-row">
+        <div class="avatar" id="profileInitials">MG</div>
+        <div>
+          <div class="profile-name" id="profileName">Manager</div>
+          <div class="profile-role">Manager</div>
+        </div>
+      </div>
+      <button class="nav-item" id="logoutBtn" type="button">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.75"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <div class="main-wrap">
+    <!-- Center workspace -->
+    <main class="workspace">
+
+      <!-- Request form -->
+      <section id="viewRequest">
+        <header class="page-header">
+          <h1>AI Staffing Copilot</h1>
+          <p>Describe your staffing requirements and let the AI Agent identify the most suitable employees.</p>
+        </header>
+
+        <div class="card">
+          <h2 class="card-title">Create Staffing Request</h2>
+          <textarea class="prompt-area" id="promptInput" placeholder="Example:
+We need two Senior AI Engineers with LangGraph, Python, FastAPI, RAG, Azure and Docker experience for a healthcare project in Munich starting next month."></textarea>
+
+          <p class="extract-hint hidden" id="extractHint">
+            Filled in from your description — review and adjust below
+          </p>
+          <p class="extract-status hidden" id="extractStatus">Reading your description…</p>
+
+          <div class="criteria-section" id="confirmForm">
+            <h3 class="section-label">Required Skills</h3>
+            <p class="field-hint">Select from known skills. Mark core skills with the star — nice-to-have skills score at half weight.</p>
+            <div class="skill-picker" id="skillPicker"></div>
+          </div>
+
+          <div class="fields-grid fields-grid-2">
+            <div>
+              <label class="field-label" for="fieldLocation">Location</label>
+              <select class="field-input" id="fieldLocation">
+                <option value="">Any location</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="fieldStartDate">Available by</label>
+              <input class="field-input" type="date" id="fieldStartDate">
+            </div>
+            <div>
+              <label class="field-label" for="fieldGermanFluency">German fluency required</label>
+              <select class="field-input" id="fieldGermanFluency">
+                <option value="none">None</option>
+                <option value="basic">Basic</option>
+                <option value="business">Business</option>
+                <option value="native">Native</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="fieldWorksCouncil">Works council notification</label>
+              <select class="field-input" id="fieldWorksCouncil">
+                <option value="no">Not applicable</option>
+                <option value="yes">Required</option>
+                <option value="already_notified">Already notified</option>
+                <option value="unsure">Unsure — flagged for review</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="criteria-section">
+            <h3 class="section-label">Scoring Weights</h3>
+            <p class="field-hint">Choose a priority preset or customize individual dimensions (auto-normalized to 100%).</p>
+            <div class="weight-presets" id="weightPresets">
+              <button type="button" class="preset-btn" data-preset="skills-first">Skills-first</button>
+              <button type="button" class="preset-btn" data-preset="availability-first">Availability-first</button>
+              <button type="button" class="preset-btn" data-preset="experience-first">Experience-first</button>
+              <button type="button" class="preset-btn active" data-preset="balanced">Balanced</button>
+            </div>
+            <details class="weights-customize" id="weightsCustomize">
+              <summary>
+                Customize weights
+                <span class="preset-summary" id="weightPresetLabel">Balanced</span>
+              </summary>
+              <div class="weights-grid" id="weightsPanel">
+                <div class="weight-row">
+                  <label for="weightSkills">Skills</label>
+                  <input type="range" id="weightSkills" min="0" max="60" value="35">
+                  <span class="weight-val-wrap">
+                    <span class="weight-val" id="weightSkillsVal">35</span>
+                    <span class="weight-priority" id="weightSkillsPriority">Very important</span>
+                  </span>
+                </div>
+                <div class="weight-row">
+                  <label for="weightAvailability">Availability</label>
+                  <input type="range" id="weightAvailability" min="0" max="60" value="20">
+                  <span class="weight-val-wrap">
+                    <span class="weight-val" id="weightAvailabilityVal">20</span>
+                    <span class="weight-priority" id="weightAvailabilityPriority">Somewhat important</span>
+                  </span>
+                </div>
+                <div class="weight-row">
+                  <label for="weightExperience">Experience</label>
+                  <input type="range" id="weightExperience" min="0" max="60" value="20">
+                  <span class="weight-val-wrap">
+                    <span class="weight-val" id="weightExperienceVal">20</span>
+                    <span class="weight-priority" id="weightExperiencePriority">Somewhat important</span>
+                  </span>
+                </div>
+                <div class="weight-row">
+                  <label for="weightLocation">Location</label>
+                  <input type="range" id="weightLocation" min="0" max="40" value="10">
+                  <span class="weight-val-wrap">
+                    <span class="weight-val" id="weightLocationVal">10</span>
+                    <span class="weight-priority" id="weightLocationPriority">Nice to have</span>
+                  </span>
+                </div>
+                <div class="weight-row">
+                  <label for="weightUtilization">Capacity</label>
+                  <input type="range" id="weightUtilization" min="0" max="40" value="10">
+                  <span class="weight-val-wrap">
+                    <span class="weight-val" id="weightUtilizationVal">10</span>
+                    <span class="weight-priority" id="weightUtilizationPriority">Nice to have</span>
+                  </span>
+                </div>
+                <div class="weight-row" id="weightLanguageRow">
+                  <label for="weightLanguage">German</label>
+                  <input type="range" id="weightLanguage" min="0" max="40" value="5" disabled>
+                  <span class="weight-val-wrap">
+                    <span class="weight-val" id="weightLanguageVal">5</span>
+                    <span class="weight-priority" id="weightLanguagePriority">Nice to have</span>
+                  </span>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <details class="inferred-details">
+            <summary>Auto-extracted context (read-only)</summary>
+            <div class="fields-grid">
+              <div><label class="field-label">Role</label><input class="field-input" id="fieldRole" readonly placeholder="From prompt"></div>
+              <div><label class="field-label">Industry</label><input class="field-input" id="fieldIndustry" readonly placeholder="From prompt"></div>
+              <div><label class="field-label">Work Mode</label><input class="field-input" id="fieldWorkMode" readonly placeholder="From prompt"></div>
+              <div><label class="field-label">Duration</label><input class="field-input" id="fieldDuration" readonly placeholder="From prompt"></div>
+              <div><label class="field-label">Priority</label><input class="field-input" id="fieldPriority" readonly placeholder="From prompt"></div>
+              <div><label class="field-label">Consultants</label><input class="field-input" id="fieldConsultants" readonly placeholder="From prompt"></div>
+            </div>
+          </details>
+
+          <div class="card-actions">
+            <button class="btn btn-primary" id="findBtn" type="button">Find Best Candidates</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Loading -->
+      <section id="viewLoading" class="hidden">
+        <div class="card loading-card">
+          <div class="spinner"></div>
+          <div class="loading-title">AI Agent is working…</div>
+          <div class="loading-sub">Searching, scoring, and ranking candidates transparently.</div>
+          <div class="progress-track"><div class="progress-bar" id="loadingProgress"></div></div>
+        </div>
+      </section>
+
+      <!-- Results -->
+      <section id="viewResults" class="hidden">
+        <div class="results-header">
+          <div>
+            <h1 class="results-title">Recommended Employees</h1>
+            <div id="resultsSummary" class="summary-wrap"></div>
+          </div>
+        </div>
+
+        <div class="candidate-cards" id="candidateCards"></div>
+
+        <h3 class="card-title" style="margin-bottom:14px;">Comparison</h3>
+        <div class="comparison-table-wrap">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Employee</th><th>Match</th><th>Availability</th><th>Experience</th>
+                <th>Certifications</th><th>Risk</th><th>Manager Rating</th><th>Confidence</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="comparisonBody"></tbody>
+          </table>
+        </div>
+
+        <h3 class="card-title" style="margin-top:8px;">Manager Notes</h3>
+        <textarea class="notes-area" id="managerNotes" placeholder="Add comments before approval...
+
+Example:
+Assign Alice because she has previous healthcare experience.
+Need backup candidate if Alice becomes unavailable."></textarea>
+
+        <div class="card approval-card">
+          <h2 class="card-title">Approval</h2>
+          <div class="approval-actions">
+            <button class="btn btn-primary" id="approveBtn" type="button">Approve Recommendation</button>
+            <button class="btn btn-secondary" id="reevalBtn" type="button">Request Re-Evaluation</button>
+            <button class="btn btn-ghost" id="rejectBtn" type="button">Reject</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Approval loading -->
+      <section id="viewApprovalLoading" class="hidden">
+        <div class="card loading-card">
+          <div class="spinner"></div>
+          <div class="loading-title">Generating approval report…</div>
+          <div class="loading-sub">Including manager notes, reasoning, and PDF.</div>
+          <div class="timeline" id="approvalTimeline" style="text-align:left;max-width:360px;margin:24px auto 0;"></div>
+        </div>
+      </section>
+
+      <!-- Success -->
+      <section id="viewSuccess" class="hidden">
+        <div class="card success-card">
+          <div class="success-icon">✓</div>
+          <h1 style="font-size:24px;font-weight:600;">Recommendation Approved</h1>
+          <p style="color:var(--text-secondary);margin-top:8px;">Generated by AI Staffing Copilot</p>
+
+          <div class="report-details">
+            <div class="report-block">
+              <h4>Approved Candidate</h4>
+              <p id="successEmployee"></p>
+            </div>
+            <div class="report-block">
+              <h4>Approved By · Timestamp · Confidence</h4>
+              <p><span id="successApprover"></span> · <span id="successTime"></span> · <span id="successConfidence"></span></p>
+            </div>
+            <div class="report-block">
+              <h4>Summary</h4>
+              <div id="successSummary" class="formatted-text"></div>
+            </div>
+            <div class="report-block">
+              <h4>Reasoning</h4>
+              <div id="successReasoning" class="reasoning-list"></div>
+            </div>
+            <div class="report-block">
+              <h4>Manager Notes</h4>
+              <p id="successNotes"></p>
+            </div>
+            <div class="report-block">
+              <h4>Betriebsrat Notification</h4>
+              <p id="successCouncil"></p>
+            </div>
+          </div>
+
+          <div class="report-actions">
+            <button class="btn btn-primary" id="downloadPdfBtn" type="button">Download PDF Report</button>
+            <button class="btn btn-secondary" id="exportJsonBtn" type="button">Export JSON</button>
+            <button class="btn btn-secondary" id="shareBtn" type="button">Share Internally</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- History -->
+      <section id="viewHistory" class="hidden">
+        <header class="page-header">
+          <h1>Staffing History</h1>
+          <p>Past approvals and audit trail from reports database.</p>
+        </header>
+        <div class="history-list" id="historyList"></div>
+      </section>
+
+      <!-- Dashboard -->
+      <section id="viewDashboard" class="hidden">
+        <header class="page-header">
+          <h1>Dashboard</h1>
+          <p>Overview of staffing activity and recent approvals.</p>
+        </header>
+        <div class="stats-grid" id="dashboardStats"></div>
+        <h3 class="section-label">Recent Approvals</h3>
+        <div class="history-list" id="dashboardRecent"></div>
+      </section>
+
+      <!-- Reports -->
+      <section id="viewReports" class="hidden">
+        <header class="page-header">
+          <h1>Reports</h1>
+          <p>Download and review generated staffing reports.</p>
+        </header>
+        <div class="reports-table-wrap">
+          <table class="comparison-table" id="reportsTable">
+            <thead>
+              <tr>
+                <th>ID</th><th>Candidate</th><th>Approved By</th><th>Date</th><th>Score</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="reportsBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- AI Agent Monitor -->
+      <section id="viewMonitor" class="hidden">
+        <header class="page-header">
+          <h1>AI Agent Monitor</h1>
+          <p>Live execution transparency and last-run diagnostics.</p>
+        </header>
+        <div class="monitor-grid">
+          <div class="card">
+            <h2 class="card-title">Execution Timeline</h2>
+            <div class="timeline monitor-timeline" id="monitorTimeline"></div>
+          </div>
+          <div class="card">
+            <h2 class="card-title">Last Run Metrics</h2>
+            <div class="metric-cards" id="monitorMetrics"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <h2 class="card-title">Tools &amp; Pipeline</h2>
+          <div class="tool-pills" id="monitorTools"></div>
+        </div>
+      </section>
+
+      <!-- Model Settings -->
+      <section id="viewSettings" class="hidden">
+        <header class="page-header">
+          <h1>Settings</h1>
+          <p>AI provider configuration, data privacy, and how candidate scoring &amp; ranking work.</p>
+        </header>
+
+        <div class="compliance-banner hidden" id="zdrWarningBanner" role="alert">
+          <strong>Zero Data Retention not confirmed</strong>
+          <p id="zdrWarningText">Your server <code>.env</code> flags are not set. Anthropic ZDR is arranged through sales/account team (not a console toggle). Groq ZDR is in GroqCloud → Data Controls. See Settings below for details.</p>
+          <div class="zdr-instructions hidden" id="zdrInstructions"></div>
+        </div>
+
+        <div class="card settings-card">
+          <h2 class="card-title">Your AI configuration</h2>
+          <div class="settings-saved" id="settingsSaved">
+            <p class="empty-state">No provider configured yet.</p>
+          </div>
+
+          <div class="settings-form">
+            <div class="fields-grid fields-grid-2">
+              <div>
+                <label class="field-label" for="settingsProvider">Provider</label>
+                <select class="field-input" id="settingsProvider">
+                  <option value="">Select provider…</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label" for="settingsModel">Model</label>
+                <select class="field-input" id="settingsModel" disabled>
+                  <option value="">Select model…</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="field-label" for="settingsApiKey">API key</label>
+              <input class="field-input" type="password" id="settingsApiKey" autocomplete="off" placeholder="Paste your API key">
+              <p class="field-hint">Never shown again after saving — only the last 4 characters are displayed.</p>
+            </div>
+            <div class="settings-actions">
+              <button class="btn btn-primary" id="settingsSaveBtn" type="button" disabled>Save configuration</button>
+              <span class="settings-status" id="settingsStatus"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card settings-card scoring-guide-card">
+          <h2 class="card-title">How scoring &amp; ranking work</h2>
+          <p class="field-hint">Transparent breakdown of how candidates are scored and ordered for each staffing request.</p>
+
+          <div class="scoring-guide">
+            <section class="guide-block">
+              <h3>Ranking (who appears first)</h3>
+              <p>Candidates are sorted by <strong>total score</strong> (highest first). Ties break on earliest availability, then more years of experience, then employee ID.</p>
+              <p>Only the top 5 ranked candidates are shown. Partial skill matches are included in the pool — the scorer decides final order.</p>
+            </section>
+
+            <section class="guide-block">
+              <h3>Total score formula</h3>
+              <p>Each dimension produces a <strong>raw score 0–100</strong>. Your weight sliders set how much each dimension contributes. Weights auto-normalize to 100%.</p>
+              <p class="formula">Total = Σ (raw score × weight%) for each dimension</p>
+            </section>
+
+            <section class="guide-block">
+              <h3>Scoring dimensions</h3>
+              <dl class="guide-dl">
+                <dt>Skills</dt>
+                <dd>Match % of required skills. Core skills (★) count 2×; nice-to-have skills count 1×. Adjacent skills give partial credit.</dd>
+                <dt>Availability</dt>
+                <dd>Can the person start by your “Available by” date? Earlier availability earns bonus points; late availability is penalized.</dd>
+                <dt>Experience</dt>
+                <dd>Years of experience scaled to 100 at 15+ years.</dd>
+                <dt>Location</dt>
+                <dd>100 if location matches your request; 0 if it does not. Ignored (100) when no location is specified.</dd>
+                <dt>Capacity</dt>
+                <dd>Bench employees score highest. Billable staff score lower as utilization increases.</dd>
+                <dt>German</dt>
+                <dd>Only for client-facing roles. Compares employee fluency vs your required level.</dd>
+              </dl>
+            </section>
+
+            <section class="guide-block">
+              <h3>Weight slider labels</h3>
+              <ul class="guide-list">
+                <li><strong>0–15</strong> — Nice to have</li>
+                <li><strong>16–30</strong> — Somewhat important</li>
+                <li><strong>31–50</strong> — Very important</li>
+                <li><strong>51+</strong> — Top priority</li>
+              </ul>
+            </section>
+
+            <section class="guide-block">
+              <h3>Judgment flags &amp; memory</h3>
+              <p>After scoring, the system adds judgment flags (e.g. burnout risk) and staffing memory (prior approvals/rejections). These inform the explanation but do not change the numeric score.</p>
+            </section>
+          </div>
+        </div>
+
+        <div class="card settings-card privacy-guide-card">
+          <h2 class="card-title">Data privacy &amp; LLM workflow</h2>
+          <p class="field-hint">What happens to employee data when you use AI features. Full details: <code>docs/DATA_PROCESSING.md</code> in the project repository.</p>
+
+          <div class="scoring-guide" id="privacyGuide">
+            <section class="guide-block">
+              <h3>Workflow</h3>
+              <ol class="guide-list workflow-list" id="llmWorkflowList">
+                <li>Loading workflow…</li>
+              </ol>
+            </section>
+
+            <section class="guide-block">
+              <h3>What is sent to the LLM</h3>
+              <div id="llmSentData"></div>
+            </section>
+
+            <section class="guide-block">
+              <h3>What is never sent to the LLM</h3>
+              <ul class="guide-list" id="llmNeverSent"></ul>
+            </section>
+
+            <section class="guide-block">
+              <h3>Audit logging</h3>
+              <p>Every outbound LLM request is logged in <code>llm_request_log</code> with names and emails replaced by internal <code>candidate#ID</code> tokens before storage. Managers never see raw audit logs in this UI — your compliance team can query the database directly.</p>
+            </section>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Right agent panel -->
+    <aside class="agent-panel">
+      <h3 class="agent-title">Agent Execution</h3>
+      <div class="timeline" id="agentTimeline"></div>
+
+      <div class="agent-stats">
+        <div class="stat-row"><span>Execution Time</span><span id="statTime">—</span></div>
+        <div class="stat-row"><span>Confidence</span><span id="statConfidence">—</span></div>
+        <div class="stat-row"><span>Tools Used</span><span id="statTools" style="font-size:11px;max-width:160px;text-align:right;">—</span></div>
+        <div class="stat-row"><span>Documents Retrieved</span><span id="statDocs">—</span></div>
+        <div class="stat-row"><span>Reasoning Score</span><span id="statReasoning">—</span></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- Betriebsrat awareness (approval) -->
+<div class="modal-overlay hidden" id="betriebsratModal">
+  <div class="modal-card">
+    <h2>Betriebsrat notification</h2>
+    <p class="modal-text">This staffing decision may materially change the employee's assignment (long-term reassignment or role change).</p>
+    <p class="modal-text"><strong>Does this require Betriebsrat notification?</strong></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" type="button" data-council="yes">Yes</button>
+      <button class="btn btn-secondary" type="button" data-council="no">No</button>
+      <button class="btn btn-ghost" type="button" data-council="unsure">Unsure</button>
+    </div>
+  </div>
+</div>
+
+<!-- Employee profile -->
+<div class="modal-overlay hidden" id="employeeProfileModal">
+  <div class="modal-card modal-card-wide">
+    <div class="modal-header">
+      <h2 id="profileModalTitle">Employee Profile</h2>
+      <button type="button" class="modal-close" id="profileModalClose" aria-label="Close">×</button>
+    </div>
+    <div id="profileModalBody" class="profile-modal-body">
+      <p class="empty-state">Loading…</p>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
